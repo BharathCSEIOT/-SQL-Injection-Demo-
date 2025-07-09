@@ -97,11 +97,75 @@ Password: anything
 
 ✔️ Now the injection is blocked — inputs are safely handled!
 
-##Learning
+### 📌 1️⃣ What is SQL Injection?
+SQL Injection is a web security vulnerability that lets an attacker insert (or “inject”) malicious SQL code into an application’s database query.
+
+If user input is not handled safely, an attacker can manipulate the query logic. This can allow them to:
+
+Log in without knowing a valid password
+
+View or modify unauthorized data
+
+Even delete entire tables (in more advanced attacks)
+
+### ⚡ 2️⃣ How SQL Injection works in your project
+In your login_vulnerable.php you used this line:
+```
+$sql = "SELECT * FROM users WHERE username = '$inputUsername' AND password = '$inputPassword'";
+```
+✅ What’s wrong here?
+```
+User input ($_POST['username'] and $_POST['password']) is directly put into the SQL string.
+```
+So an attacker can craft input that changes the query.
+
+➡️ For example:
+Input:
+```
+Username: admin' --
+Password: (anything)
+```
+✅ What happens?
+
+The final query becomes:
+```
+SELECT * FROM users WHERE username = 'admin' -- ' AND password = '(anything)'
+```
+-- is a comment in SQL. So everything after it is ignored.
+
+The query checks only username = 'admin' and skips the password check.
+
+The attacker logs in without a valid password!
+
+### 🔒 3️⃣ How you fixed it — Prepared Statements
+To remove the vulnerability, you changed your login.php logic to use prepared statements:
+```
+$stmt = $db->prepare('SELECT * FROM users WHERE username = :username AND password = :password');
+$stmt->bindValue(':username', $_POST['username'], SQLITE3_TEXT);
+stmt->bindValue(':password', $_POST['password'], SQLITE3_TEXT);
+$result = $stmt->execute();
+```
+#### ✅ Why is this safe?
+
+The SQL query is defined with placeholders (:username and :password).
+
+User input is never directly mixed into the query.
+
+The database engine treats the input as data, not code.
+
+So special characters like ', -- or ; don’t change the query logic.
+
+An injection like admin' -- no longer works — the input can’t break the query!
+
+## Learning
 ✅ How SQL Injection works
+
 ✅ How untrusted input breaks a query
+
 ✅ Why prepared statements are important
+
 ✅ How to use SQLite in PHP for simple demos
+
 ✅ How to test security vulnerabilities safely
 
 ## 🔒 Key Cybersecurity Takeaway
